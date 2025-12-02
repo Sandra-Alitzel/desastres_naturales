@@ -7,6 +7,7 @@ from joblib import dump
 
 # Para que "src" sea visible al ejecutar desde la raíz del repo:
 import sys
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_DIR))
 
@@ -14,6 +15,11 @@ from src.config import EVENTS
 from src.dataset import build_dataset
 from src.model import train_damage_classifier
 
+try:
+    MAX_IMAGES = int(sys.argv[1])
+except:
+    print("[WARN] Max images usage parameter missing using default = 3 for testing")
+    MAX_IMAGES = 3
 
 def main():
     print("=== Entrenando modelo de daño (DamageLens) ===")
@@ -22,7 +28,7 @@ def main():
     X, y = build_dataset(
         events=EVENTS,
         split="train",
-        max_images_per_event=3  # puedes ajustar esto
+        max_images_per_event=MAX_IMAGES,  # puedes ajustar esto
     )
 
     # 2. Entrenar clasificador

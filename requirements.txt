@@ -1,3 +1,4 @@
+joblib
 numpy
 matplotlib
 opencv-python
