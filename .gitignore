@@ -1,0 +1,15 @@
+# Datos grandes del dataset
+Datos/
+
+# Modelos y figuras grandes (opcional)
+models/
+figuras/
+
+# Cosas de Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Checkpoints de notebooks
+.ipynb_checkpoints/
