@@ -1,9 +1,25 @@
-# src/spectral.py
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def compute_spectral_indices(img):
+    """Calcula los índices espectrales NDVI y SAVI para una imagen.
+
+    Como las imágenes xBD son RGB, se utiliza el canal verde (G) como un
+    proxy del Infrarrojo Cercano (NIR) para calcular los índices.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Imagen de entrada en formato RGB.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Una tupla conteniendo:
+        - NDVI (np.ndarray): Mapa del Índice de Vegetación de Diferencia Normalizada.
+        - SAVI (np.ndarray): Mapa del Índice de Vegetación Ajustado al Suelo.
+    """
     img_f = img.astype(np.float32) / 255.0
 
     R = img_f[..., 0]
@@ -23,6 +39,21 @@ def compute_spectral_indices(img):
 
 
 def visualize_spectral_indices_pre_post(img_pre, img_post, title_prefix=""):
+    """Visualiza los índices NDVI y SAVI para imágenes pre y post-desastre.
+
+    Genera una figura de Matplotlib con 4 subplots para comparar los
+    índices espectrales calculados a partir de las imágenes de antes y
+    después del evento.
+
+    Parameters
+    ----------
+    img_pre : np.ndarray
+        Imagen pre-desastre en formato RGB.
+    img_post : np.ndarray
+        Imagen post-desastre en formato RGB.
+    title_prefix : str, optional
+        Un prefijo para añadir al título de cada subplot.
+    """
     NDVI_pre, SAVI_pre   = compute_spectral_indices(img_pre)
     NDVI_post, SAVI_post = compute_spectral_indices(img_post)
 

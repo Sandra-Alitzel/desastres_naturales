@@ -1,4 +1,3 @@
-# src/visualization.py
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
@@ -9,6 +8,19 @@ from .vegetation import detect_burned_vegetation
 
 
 def show_mask_and_contours(img, data):
+    """Muestra la máscara de edificios y sus contornos sobre la imagen.
+
+    Genera una figura con dos subplots:
+    1. La máscara binaria de los edificios.
+    2. Los contornos de los edificios dibujados sobre la imagen original.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Imagen sobre la cual se visualizarán los contornos.
+    data : dict
+        Datos de etiquetas en formato GeoJSON que contienen los polígonos.
+    """
     mask, polys, _ = json_to_mask_and_polygons(data, img.shape)
 
     plt.figure(figsize=(12, 5))
@@ -31,6 +43,24 @@ def show_mask_and_contours(img, data):
 
 
 def plot_pre_post_MDM_with_veg(img_pre, img_post, hm_buildings):
+    """Visualiza las imágenes pre y post-desastre junto con el mapa de daños.
+
+    Crea una figura con tres subplots:
+    1. Imagen pre-desastre.
+    2. Imagen post-desastre.
+    3. Imagen post-desastre con el mapa de daños (MDM) de edificios y la
+       detección de vegetación quemada superpuestos.
+
+    Parameters
+    ----------
+    img_pre : np.ndarray or None
+        Imagen pre-desastre en formato RGB. Si es None, se muestra la
+        imagen post-desastre en su lugar.
+    img_post : np.ndarray
+        Imagen post-desastre en formato RGB.
+    hm_buildings : np.ndarray
+        Mapa de calor (heatmap) del daño en edificios, con valores en [0, 1].
+    """
     veg_burned = None
     if img_pre is not None:
         veg_burned = detect_burned_vegetation(img_pre, img_post)

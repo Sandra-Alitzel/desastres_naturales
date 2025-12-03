@@ -9,11 +9,53 @@ from .features import extract_DMS
 
 
 def damage_score_from_proba(proba, class_labels):
+    """Calcula una puntuación de daño continua a partir de probabilidades.
+
+    La puntuación se calcula como una suma ponderada de las probabilidades
+    de clase, donde los pesos son las etiquetas de clase normalizadas.
+
+    Parameters
+    ----------
+    proba : np.ndarray
+        Array de probabilidades de predicción para cada clase de daño.
+    class_labels : np.ndarray
+        Array con las etiquetas numéricas de las clases.
+
+    Returns
+    -------
+    float
+        Puntuación de daño continua, típicamente en el rango [0, 1].
+    """
     class_labels = np.array(class_labels, dtype=np.float32)
     return float((proba * (class_labels / 3.0)).sum())
 
 
 def create_MDM_for_image(img, data, model, alpha=0.6):
+    """Crea un Mapa de Daños Multiescala (MDM) para una imagen completa.
+
+    Itera sobre cada polígono de edificio en los datos de etiquetas,
+    extrae características, predice el daño con el modelo y genera un
+    mapa de calor (heatmap) y una superposición visual del daño.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Imagen post-desastre en formato RGB.
+    data : dict
+        Datos de etiquetas en formato GeoJSON con los polígonos de edificios.
+    model : sklearn.base.ClassifierMixin
+        Clasificador entrenado para predecir el daño.
+    alpha : float, optional
+        Factor de transparencia para la superposición del mapa de calor.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Una tupla conteniendo:
+        - overlay (np.ndarray): Imagen con el mapa de calor superpuesto.
+        - hm_norm (np.ndarray): Mapa de calor normalizado (puntuaciones
+          de daño por píxel).
+    """
     h, w = img.shape[:2]
     heatmap = np.zeros((h, w), dtype=np.float32)
 
