@@ -6,8 +6,7 @@ import numpy as np
 from shapely import wkt
 import random 
 
-# Se asume que config.py incluye INV_DAMAGE_MAP
-from .config import DATA_DIR, DAMAGE_MAP, INV_DAMAGE_MAP
+from .config import DAMAGE_MAP, INV_DAMAGE_MAP
 from .data_io import list_event_files, get_label_path
 from .features import extract_DMS
 
@@ -35,7 +34,6 @@ def augment_patch(patch):
 
 
 def polygons_to_patches_and_labels(img, data):
-    # ... (Cuerpo de la función sin cambios) ...
     patches = []
     labels = []
     h, w = img.shape[:2]
@@ -70,7 +68,7 @@ def polygons_to_patches_and_labels(img, data):
     return patches, labels
 
 
-def build_dataset(events, split="train", max_images_per_event=None, max_samples_per_class=2000):
+def build_dataset(events, split="train", max_images_per_event=None, max_samples_per_class=2000, augment: bool = False):
     """
     Construye el dataset a nivel edificio, implementando Augmentation (Oversampling)
     para clases minoritarias y Subsampling para la clase mayoritaria.
@@ -108,61 +106,61 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
                 # Almacenamos el patch (imagen), no las features
                 if lab in patches_by_class:
                     patches_by_class[lab].append(p)
-    
+
     # 2. Balanceo: Augmentation (Oversampling) y Subsampling
     final_patches = []
     final_labels = []
-
-    print("\n--- Balanceo (Augmentation / Sampling) ---")
+    if augment:
+        print(f"\n--- Stats para {split} con Balanceo (Augmentation / Sampling) ---")
+    else:
+        print(f"\n ---Stats para {split}---")
     target_N = max_samples_per_class
-    
-    for class_id, original_patches in patches_by_class.items():
+
+    for i, (class_id, original_patches) in enumerate(patches_by_class.items(), start=1):
         class_name = INV_DAMAGE_MAP[class_id]
         original_count = len(original_patches)
-        
+
         if original_count == 0:
             print(f"[{class_name} (id={class_id})]: 0 muestras. Saltando.")
             continue
-            
+
         # --- Augmentation / Oversampling (Clases Minoritarias) ---
-        if original_count < target_N:
+        if (original_count < target_N) and augment:
             augmented_patches = list(original_patches)
-            needed_N = target_N - original_count
-            
+
             # Generar nuevas muestras por aumento
             cycle_count = 0
             while len(augmented_patches) < target_N:
                 # Ciclamos sobre los patches originales disponibles
                 source_patch = original_patches[cycle_count % original_count]
-                
+
                 # Aplicamos aumento
                 new_patch = augment_patch(source_patch)
                 augmented_patches.append(new_patch)
                 cycle_count += 1
-            
+
             N_final = len(augmented_patches)
             final_patches.extend(augmented_patches)
             final_labels.extend([class_id] * N_final)
             print(f"[{class_name} (id={class_id})]: {original_count} -> {N_final} muestras (Oversampling)")
-        
+
         # --- Subsampling (Clase Mayoritaria) ---
-        elif original_count > target_N:
+        elif (original_count > target_N) and augment:
             # Seleccionar aleatoriamente el número objetivo de muestras
             indices = random.sample(range(original_count), target_N)
             subsampled_patches = [original_patches[i] for i in indices]
-            
+
             final_patches.extend(subsampled_patches)
             final_labels.extend([class_id] * target_N)
             print(f"[{class_name} (id={class_id})]: {original_count} -> {target_N} muestras (Subsampling)")
-        
-        # --- Sin cambios ---
+
         else:
             final_patches.extend(original_patches)
             final_labels.extend([class_id] * original_count)
             print(f"[{class_name} (id={class_id})]: {original_count} -> {original_count} muestras (No sampling)")
 
-    # 3. Paso Final: Extraer características DMS del dataset balanceado
-    print("\n--- Extrayendo características DMS del dataset balanceado... ---")
+    # 3. Paso Final: Extraer características DMS del dataset
+    print("\n--- Extrayendo características DMS del dataset ... ---")
     X = np.array([extract_DMS(p) for p in final_patches])
     y = np.array(final_labels)
     

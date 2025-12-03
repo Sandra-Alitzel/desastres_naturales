@@ -21,12 +21,17 @@ def main():
     X, y = build_dataset(
         events=EVENTS,
         split="train",
-        # max_images_per_event=None, # Se mantiene sin límite de imágenes
-        max_samples_per_class=4000 # <--- AUMENTADO (Dataset total: 16,000)
+        max_samples_per_class=4000, # <--- AUMENTADO (Dataset total: 16,000)
+        augment=True
+    )
+    X_test, y_test = build_dataset(
+        events=EVENTS,
+        split="test",
+        augment=False
     )
 
     # 2. Entrenar clasificador
-    clf, metrics = train_damage_classifier(X, y)
+    clf, metrics = train_damage_classifier(X, y, X_test, y_test)
 
     # 3. Crear carpeta models/
     models_dir = ROOT_DIR / "models"
