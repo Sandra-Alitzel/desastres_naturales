@@ -1,4 +1,3 @@
-# src/features.py
 import cv2
 import numpy as np
 from skimage.feature import local_binary_pattern
@@ -8,6 +7,22 @@ from .config import IMG_SIZE
 
 
 def edge_features(gray):
+    """Extrae características de bordes usando filtros Sobel y Laplaciano.
+
+    Calcula la magnitud del gradiente con Sobel y la varianza del Laplaciano
+    para capturar información sobre la presencia y fuerza de los bordes.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Imagen en escala de grises.
+
+    Returns
+    -------
+    np.ndarray
+        Vector de características concatenando el histograma de magnitud del
+        gradiente y la varianza del Laplaciano.
+    """
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
     mag = np.sqrt(sobelx**2 + sobely**2)
@@ -22,6 +37,24 @@ def edge_features(gray):
 
 
 def lbp_features(gray, P=8, R=1):
+    """Calcula el histograma de Patrones Binarios Locales (LBP).
+
+    LBP es un descriptor de textura que captura patrones locales.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Imagen en escala de grises.
+    P : int, optional
+        Número de puntos en un vecindario circular.
+    R : float, optional
+        Radio del vecindario circular.
+
+    Returns
+    -------
+    np.ndarray
+        Histograma normalizado de los patrones LBP.
+    """
     lbp = local_binary_pattern(gray, P=P, R=R, method="uniform")
     n_bins = P + 2
     hist, _ = np.histogram(lbp.ravel(), bins=n_bins, range=(0, n_bins), density=True)
@@ -29,6 +62,21 @@ def lbp_features(gray, P=8, R=1):
 
 
 def haralick_features(gray):
+    """Extrae características de textura de Haralick de la matriz GLCM.
+
+    Estas características describen la textura de la imagen basándose en
+    la co-ocurrencia de niveles de gris.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Imagen en escala de grises.
+
+    Returns
+    -------
+    np.ndarray
+        Vector con las propiedades de textura de Haralick.
+    """
     gray_small = cv2.resize(gray, (64, 64))
     gray_q = (gray_small / 4).astype(np.uint8)  # 0..63
 
@@ -47,6 +95,21 @@ def haralick_features(gray):
 
 
 def fourier_features(gray):
+    """Extrae características del espectro de frecuencias de Fourier.
+
+    Calcula la magnitud media en bandas de baja, media y alta frecuencia
+    para capturar la estructura global de la imagen.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Imagen en escala de grises.
+
+    Returns
+    -------
+    np.ndarray
+        Vector con las magnitudes medias de las bandas de frecuencia.
+    """
     f = np.fft.fft2(gray)
     fshift = np.fft.fftshift(f)
     mag = np.abs(fshift)
@@ -67,6 +130,23 @@ def fourier_features(gray):
 
 
 def laplacian_pyramid_features(gray, levels=4):
+    """Extrae la varianza de cada nivel de la pirámide Laplaciana.
+
+    La pirámide Laplaciana descompone la imagen en diferentes escalas,
+    y su varianza en cada nivel da información sobre la textura y detalles.
+
+    Parameters
+    ----------
+    gray : np.ndarray
+        Imagen en escala de grises.
+    levels : int, optional
+        Número de niveles de la pirámide.
+
+    Returns
+    -------
+    np.ndarray
+        Vector con la varianza de cada nivel de la pirámide.
+    """
     gray = cv2.resize(gray, (IMG_SIZE, IMG_SIZE))
 
     gp = [gray.astype(np.float32)]
@@ -84,6 +164,19 @@ def laplacian_pyramid_features(gray, levels=4):
 
 
 def color_features(rgb):
+    """Extrae histogramas de color del espacio de color HSV.
+
+    Parameters
+    ----------
+    rgb : np.ndarray
+        Imagen en formato RGB.
+
+    Returns
+    -------
+    np.ndarray
+        Vector de características concatenando los histogramas de los
+        canales H, S y V.
+    """
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     h_hist, _ = np.histogram(hsv[:, :, 0], bins=16, range=(0, 180), density=True)
     s_hist, _ = np.histogram(hsv[:, :, 1], bins=16, range=(0, 255), density=True)
@@ -92,6 +185,21 @@ def color_features(rgb):
 
 
 def extract_DMS(patch_rgb):
+    """Extrae un vector de características combinado (Damage Morpho-Spectral).
+
+    Este vector DMS combina características de bordes, textura (LBP, Haralick),
+    frecuencia (Fourier), escala (Pirámide Laplaciana) y color (HSV).
+
+    Parameters
+    ----------
+    patch_rgb : np.ndarray
+        Parche de imagen en formato RGB.
+
+    Returns
+    -------
+    np.ndarray
+        Vector de características DMS final.
+    """
     patch_rgb = cv2.resize(patch_rgb, (IMG_SIZE, IMG_SIZE))
     gray = cv2.cvtColor(patch_rgb, cv2.COLOR_RGB2GRAY)
 

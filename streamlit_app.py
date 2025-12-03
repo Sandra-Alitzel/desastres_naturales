@@ -1,6 +1,3 @@
-## `streamlit_app.py`
-
-
 import sys
 from pathlib import Path
 import json
@@ -10,9 +7,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from joblib import load
 
-# ------------------------------------------
 # Asegurar acceso a src/ desde cualquier lugar
-# ------------------------------------------
 ROOT_DIR = Path(__file__).resolve().parents[0]
 if not (ROOT_DIR / "src").exists():
     ROOT_DIR = ROOT_DIR.parent
@@ -28,10 +23,19 @@ from src.vegetation import detect_burned_vegetation
 # ==========================================
 # CACHES
 # ==========================================
-
-
 @st.cache_resource
 def load_trained_model():
+    """Carga el modelo de clasificación de daños entrenado.
+
+    Utiliza el cache de recursos de Streamlit para cargar el modelo una
+    sola vez y mantenerlo en memoria.
+
+    Returns
+    -------
+    sklearn.base.ClassifierMixin or None
+        El clasificador entrenado si se encuentra, o None si el archivo
+        del modelo no existe.
+    """
     model_path = ROOT_DIR / "models" / "damage_clf.pkl"
     if not model_path.exists():
         st.error(
@@ -45,6 +49,23 @@ def load_trained_model():
 
 @st.cache_data
 def list_event_files_cached(split: str, event: str):
+    """Obtiene la lista de archivos de imágenes para un evento y split.
+
+    Utiliza el cache de datos de Streamlit para evitar listar los
+    archivos del sistema de ficheros repetidamente.
+
+    Parameters
+    ----------
+    split : str
+        El conjunto de datos a listar ('train', 'test', 'hold').
+    event : str
+        El nombre del evento de desastre.
+
+    Returns
+    -------
+    list[str]
+        Una lista de rutas de archivo como cadenas de texto.
+    """
     try:
         files = list_event_files(split, event)
         return [str(f) for f in files]
@@ -55,6 +76,25 @@ def list_event_files_cached(split: str, event: str):
 
 @st.cache_data
 def load_image_and_json(path_str: str, split: str):
+    """Carga una imagen, su JSON de etiquetas y la imagen pre-desastre.
+
+    Parameters
+    ----------
+    path_str : str
+        Ruta a la imagen post-desastre.
+    split : str
+        El conjunto de datos al que pertenece la imagen.
+
+    Returns
+    -------
+    tuple
+        Una tupla conteniendo:
+        - img_rgb (np.ndarray): Imagen post-desastre en formato RGB.
+        - data (dict): Datos de etiquetas en formato JSON.
+        - img_pre (np.ndarray or None): Imagen pre-desastre en RGB, o None.
+        - img_path (Path): Objeto Path de la imagen post-desastre.
+        - label_path (Path): Objeto Path del archivo de etiquetas.
+    """
     img_path = Path(path_str)
     label_path = get_label_path(split, img_path)
 
@@ -76,6 +116,27 @@ def load_image_and_json(path_str: str, split: str):
 
 
 def fig_pre_post_mdm_veg(img_pre, img_post, hm_buildings):
+    """Genera una figura con imágenes pre, post y el mapa de daños (MDM).
+
+    La figura contiene tres subplots:
+    1. Imagen pre-desastre.
+    2. Imagen post-desastre.
+    3. Imagen post-desastre con el MDM de edificios y vegetación quemada.
+
+    Parameters
+    ----------
+    img_pre : np.ndarray or None
+        Imagen pre-desastre en RGB. Si es None, se muestra la post-desastre.
+    img_post : np.ndarray
+        Imagen post-desastre en RGB.
+    hm_buildings : np.ndarray
+        Heatmap (mapa de calor) del daño en edificios.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        La figura generada con los subplots.
+    """
     veg_burned = None
     if img_pre is not None:
         veg_burned = detect_burned_vegetation(img_pre, img_post)
@@ -110,6 +171,20 @@ def fig_pre_post_mdm_veg(img_pre, img_post, hm_buildings):
 
 
 def fig_ndvi_savi_pre_post(img_pre, img_post):
+    """Genera una figura comparando los índices NDVI y SAVI pre y post-desastre.
+
+    Parameters
+    ----------
+    img_pre : np.ndarray
+        Imagen pre-desastre en RGB.
+    img_post : np.ndarray
+        Imagen post-desastre en RGB.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        La figura generada con los 4 subplots de índices espectrales.
+    """
     NDVI_pre, SAVI_pre = compute_spectral_indices(img_pre)
     NDVI_post, SAVI_post = compute_spectral_indices(img_post)
 

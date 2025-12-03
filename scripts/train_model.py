@@ -1,5 +1,3 @@
-# scripts/train_model.py (Actualizado)
-
 import json
 from pathlib import Path
 from joblib import dump
@@ -14,14 +12,21 @@ from src.dataset import build_dataset
 from src.model import train_damage_classifier
 
 def main():
+    """Entrena y guarda el modelo de clasificación de daños.
+
+    Este script se encarga de:
+    1. Construir el dataset de entrenamiento y test.
+    2. Entrenar el clasificador de daños.
+    3. Guardar el modelo entrenado y las métricas de evaluación.
+    """
     print("=== Entrenando modelo de daño (DamageLens) ===")
 
-    # 1. Construir dataset a nivel edificio (train)
-    # Aumentamos el límite de muestras por clase de 2000 a 4000 para un dataset más grande.
+    # Construimos el dataset a nivel edificio (train)
     X, y = build_dataset(
         events=EVENTS,
         split="train",
-        max_samples_per_class=4000, # <--- AUMENTADO (Dataset total: 16,000)
+        # Se realiza un sampleo dinámico
+        max_samples_per_class=4000,
         augment=True
     )
     X_test, y_test = build_dataset(
@@ -30,19 +35,17 @@ def main():
         augment=False
     )
 
-    # 2. Entrenar clasificador
+    # Entrenamiento del modelo
     clf, metrics = train_damage_classifier(X, y, X_test, y_test)
 
-    # 3. Crear carpeta models/
+    # Guardado del modelo y métricas
     models_dir = ROOT_DIR / "models"
     models_dir.mkdir(exist_ok=True)
 
-    # 4. Guardar modelo
     model_path = models_dir / "damage_clf.pkl"
     dump(clf, model_path)
     print(f"[OK] Modelo guardado en: {model_path}")
 
-    # 5. Guardar métricas
     metrics_path = models_dir / "damage_metrics.json"
     metrics_serializable = {
         "f1_macro": float(metrics["f1_macro"]),

@@ -1,5 +1,3 @@
-# src/model.py (Versión Final Corregida)
-
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
@@ -13,15 +11,39 @@ from .config import INV_DAMAGE_MAP
 
 
 def train_damage_classifier(X_train, y_train, X_test, y_test, test_size=0.2, random_state=42):
+    """Entrena un clasificador de daño y evalúa su rendimiento.
+
+    Utiliza un pipeline con StandardScaler y RandomForestClassifier para
+    entrenar el modelo con los datos de entrenamiento y luego lo evalúa
+    con los datos de prueba, calculando y mostrando varias métricas.
+
+    Parameters
+    ----------
+    X_train : np.ndarray
+        Vector de características para el conjunto de entrenamiento.
+    y_train : np.ndarray
+        Etiquetas para el conjunto de entrenamiento.
+    X_test : np.ndarray
+        Vector de características para el conjunto de prueba/validación.
+    y_test : np.ndarray
+        Etiquetas para el conjunto de prueba/validación.
+    test_size : float, optional
+        (No utilizado actualmente) Proporción del dataset para validación.
+    random_state : int, optional
+        Semilla para la reproducibilidad del clasificador.
+
+    Returns
+    -------
+    tuple[Pipeline, dict]
+        Una tupla conteniendo:
+        - clf (Pipeline): El pipeline del clasificador entrenado.
+        - metrics (dict): Un diccionario con las métricas de evaluación
+          (F1, MCC, Kappa, matriz de confusión, reporte).
+    """
     if len(y_train) == 0:
         raise RuntimeError("No hay datos en y. Revisa build_dataset / rutas.")
 
-    # 1. División del dataset en Entrenamiento y Validación
-    #X_train, X_val, y_train, y_val = train_test_split(
-    #    X, y, test_size=test_size, stratify=y, random_state=random_state
-    #)
-
-    # 2. Definición y Entrenamiento del Clasificador
+    # Definición y Entrenamiento del Clasificador
     clf = Pipeline([
         ("scaler", StandardScaler()),
         ("rf", RandomForestClassifier(
@@ -35,7 +57,7 @@ def train_damage_classifier(X_train, y_train, X_test, y_test, test_size=0.2, ran
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
 
-    # 3. Cálculo de Métricas
+    # Cálculo de Métricas
     present_labels = np.unique(y_test)
     present_names = [INV_DAMAGE_MAP[c] for c in present_labels]
 

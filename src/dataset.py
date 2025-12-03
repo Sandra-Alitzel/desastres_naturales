@@ -1,5 +1,3 @@
-# src/dataset.py
-
 import json
 import cv2
 import numpy as np
@@ -16,11 +14,11 @@ def augment_patch(patch):
     Aplica transformaciones geométricas aleatorias (flip horizontal y rotación)
     a un parche de imagen para generar nuevas muestras.
     """
-    # 1. Flip horizontal aleatorio
+    # Flip horizontal aleatorio
     if random.random() > 0.5:
         patch = cv2.flip(patch, 1)
 
-    # 2. Rotación aleatoria (90, 180, 270 grados)
+    # Rotación aleatoria (90, 180, 270 grados)
     # 0 = no rota, 1 = 90°, 2 = 180°, 3 = 270°
     rotation_choice = random.choice([0, 1, 2, 3])
     if rotation_choice == 1:
@@ -34,6 +32,29 @@ def augment_patch(patch):
 
 
 def polygons_to_patches_and_labels(img, data):
+    """Extrae parches de edificios y sus etiquetas de daño.
+
+    A partir de una imagen y los datos de anotación (polígonos), esta
+    función recorta los parches de la imagen que corresponden a cada
+    edificio y extrae su etiqueta de clasificación de daño.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Imagen de entrada (post-desastre) en formato NumPy.
+    data : dict
+        Diccionario con los datos de las etiquetas (polígonos y
+        metadatos) en formato GeoJSON.
+
+    Returns
+    -------
+    tuple[list[np.ndarray], list[int]]
+        Una tupla conteniendo:
+        - patches (list[np.ndarray]): Lista de parches de imagen,
+          cada uno representando un edificio.
+        - labels (list[int]): Lista de etiquetas numéricas de daño
+          correspondientes a cada parche.
+    """
     patches = []
     labels = []
     h, w = img.shape[:2]
@@ -73,7 +94,7 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
     Construye el dataset a nivel edificio, implementando Augmentation (Oversampling)
     para clases minoritarias y Subsampling para la clase mayoritaria.
     """
-    # 1. Primer paso: Colectar todos los patches y labels originales, agrupados por clase.
+    # Colectar todos los patches y labels originales, agrupados por clase.
     patches_by_class = {c: [] for c in DAMAGE_MAP.values()}
     
     for ev in events:
@@ -107,7 +128,7 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
                 if lab in patches_by_class:
                     patches_by_class[lab].append(p)
 
-    # 2. Balanceo: Augmentation (Oversampling) y Subsampling
+    # Balanceo: Augmentation (Oversampling) y Subsampling
     final_patches = []
     final_labels = []
     if augment:
@@ -124,7 +145,7 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
             print(f"[{class_name} (id={class_id})]: 0 muestras. Saltando.")
             continue
 
-        # --- Augmentation / Oversampling (Clases Minoritarias) ---
+        # Augmentation / Oversampling (Clases Minoritarias)
         if (original_count < target_N) and augment:
             augmented_patches = list(original_patches)
 
@@ -144,7 +165,7 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
             final_labels.extend([class_id] * N_final)
             print(f"[{class_name} (id={class_id})]: {original_count} -> {N_final} muestras (Oversampling)")
 
-        # --- Subsampling (Clase Mayoritaria) ---
+        # Subsampling (Clase Mayoritaria)
         elif (original_count > target_N) and augment:
             # Seleccionar aleatoriamente el número objetivo de muestras
             indices = random.sample(range(original_count), target_N)
@@ -159,8 +180,8 @@ def build_dataset(events, split="train", max_images_per_event=None, max_samples_
             final_labels.extend([class_id] * original_count)
             print(f"[{class_name} (id={class_id})]: {original_count} -> {original_count} muestras (No sampling)")
 
-    # 3. Paso Final: Extraer características DMS del dataset
-    print("\n--- Extrayendo características DMS del dataset ... ---")
+    # Extraer características DMS del dataset
+    print("\n *** Extrayendo características DMS del dataset ***")
     X = np.array([extract_DMS(p) for p in final_patches])
     y = np.array(final_labels)
     

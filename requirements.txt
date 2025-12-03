@@ -1,3 +1,5 @@
+joblib
+streamlit
 numpy
 matplotlib
 opencv-python
