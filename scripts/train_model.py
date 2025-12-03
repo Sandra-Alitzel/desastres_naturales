@@ -1,8 +1,7 @@
-# scripts/train_model.py
+# scripts/train_model.py (Actualizado)
 
 import json
 from pathlib import Path
-
 from joblib import dump
 
 # Para que "src" sea visible al ejecutar desde la raíz del repo:
@@ -14,15 +13,16 @@ from src.config import EVENTS
 from src.dataset import build_dataset
 from src.model import train_damage_classifier
 
-
 def main():
     print("=== Entrenando modelo de daño (DamageLens) ===")
 
     # 1. Construir dataset a nivel edificio (train)
+    # Aumentamos el límite de muestras por clase de 2000 a 4000 para un dataset más grande.
     X, y = build_dataset(
         events=EVENTS,
         split="train",
-        max_images_per_event=3  # puedes ajustar esto
+        # max_images_per_event=None, # Se mantiene sin límite de imágenes
+        max_samples_per_class=4000 # <--- AUMENTADO (Dataset total: 16,000)
     )
 
     # 2. Entrenar clasificador
@@ -44,14 +44,13 @@ def main():
         "mcc": float(metrics["mcc"]),
         "kappa": float(metrics["kappa"]),
         "confusion_matrix": metrics["confusion_matrix"].tolist(),
+        "report": metrics["report"]
     }
-
     with open(metrics_path, "w") as f:
-        json.dump(metrics_serializable, f, indent=2)
-
+        json.dump(metrics_serializable, f, indent=4)
     print(f"[OK] Métricas guardadas en: {metrics_path}")
+    
     print("=== Entrenamiento completo ===")
-
 
 if __name__ == "__main__":
     main()
