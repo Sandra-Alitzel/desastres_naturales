@@ -6,7 +6,6 @@ from pathlib import Path
 import json
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 from joblib import load
@@ -19,7 +18,7 @@ if not (ROOT_DIR / "src").exists():
     ROOT_DIR = ROOT_DIR.parent
 sys.path.append(str(ROOT_DIR))
 
-from src.config import DATA_DIR, EVENTS
+from src.config import EVENTS
 from src.data_io import list_event_files, get_label_path, load_pre_image_from_post_path
 from src.mdm import create_MDM_for_image
 from src.spectral import compute_spectral_indices
@@ -29,6 +28,7 @@ from src.vegetation import detect_burned_vegetation
 # ==========================================
 # CACHES
 # ==========================================
+
 
 @st.cache_resource
 def load_trained_model():
@@ -74,6 +74,7 @@ def load_image_and_json(path_str: str, split: str):
 # FUNCIONES DE PLOTEO (FIGURAS PARA STREAMLIT)
 # ==========================================
 
+
 def fig_pre_post_mdm_veg(img_pre, img_post, hm_buildings):
     veg_burned = None
     if img_pre is not None:
@@ -109,7 +110,7 @@ def fig_pre_post_mdm_veg(img_pre, img_post, hm_buildings):
 
 
 def fig_ndvi_savi_pre_post(img_pre, img_post):
-    NDVI_pre, SAVI_pre   = compute_spectral_indices(img_pre)
+    NDVI_pre, SAVI_pre = compute_spectral_indices(img_pre)
     NDVI_post, SAVI_post = compute_spectral_indices(img_post)
 
     fig, axes = plt.subplots(2, 2, figsize=(8, 6))
@@ -124,13 +125,15 @@ def fig_ndvi_savi_pre_post(img_pre, img_post):
     axes[0, 0].axis("off")
     cbar0 = fig.colorbar(im0, ax=axes[0, 0], fraction=0.046, pad=0.04)
     cbar0.set_ticks(ticks_ndvi)
-    cbar0.set_ticklabels([
-        "-0.3\nagua/suelo",
-        "0.0\nsin vegetación",
-        "0.3\nveg. escasa",
-        "0.6\nveg. moderada",
-        "0.9\nveg. densa",
-    ])
+    cbar0.set_ticklabels(
+        [
+            "-0.3\nagua/suelo",
+            "0.0\nsin vegetación",
+            "0.3\nveg. escasa",
+            "0.6\nveg. moderada",
+            "0.9\nveg. densa",
+        ]
+    )
     cbar0.set_label("NDVI", fontsize=8)
 
     # SAVI Pre
@@ -139,13 +142,15 @@ def fig_ndvi_savi_pre_post(img_pre, img_post):
     axes[0, 1].axis("off")
     cbar1 = fig.colorbar(im1, ax=axes[0, 1], fraction=0.046, pad=0.04)
     cbar1.set_ticks(ticks_savi)
-    cbar1.set_ticklabels([
-        "-0.3\nsuelo desnudo",
-        "0.0\nbaja cobertura",
-        "0.3\nveg. baja",
-        "0.6\nveg. media",
-        "0.9\nveg. alta",
-    ])
+    cbar1.set_ticklabels(
+        [
+            "-0.3\nsuelo desnudo",
+            "0.0\nbaja cobertura",
+            "0.3\nveg. baja",
+            "0.6\nveg. media",
+            "0.9\nveg. alta",
+        ]
+    )
     cbar1.set_label("SAVI", fontsize=8)
 
     # NDVI Post
@@ -154,13 +159,15 @@ def fig_ndvi_savi_pre_post(img_pre, img_post):
     axes[1, 0].axis("off")
     cbar2 = fig.colorbar(im2, ax=axes[1, 0], fraction=0.046, pad=0.04)
     cbar2.set_ticks(ticks_ndvi)
-    cbar2.set_ticklabels([
-        "-0.3\nagua/suelo",
-        "0.0\nsin vegetación",
-        "0.3\nveg. escasa",
-        "0.6\nveg. moderada",
-        "0.9\nveg. densa",
-    ])
+    cbar2.set_ticklabels(
+        [
+            "-0.3\nagua/suelo",
+            "0.0\nsin vegetación",
+            "0.3\nveg. escasa",
+            "0.6\nveg. moderada",
+            "0.9\nveg. densa",
+        ]
+    )
     cbar2.set_label("NDVI", fontsize=8)
 
     # SAVI Post
@@ -169,13 +176,15 @@ def fig_ndvi_savi_pre_post(img_pre, img_post):
     axes[1, 1].axis("off")
     cbar3 = fig.colorbar(im3, ax=axes[1, 1], fraction=0.046, pad=0.04)
     cbar3.set_ticks(ticks_savi)
-    cbar3.set_ticklabels([
-        "-0.3\nsuelo desnudo",
-        "0.0\nbaja cobertura",
-        "0.3\nveg. baja",
-        "0.6\nveg. media",
-        "0.9\nveg. alta",
-    ])
+    cbar3.set_ticklabels(
+        [
+            "-0.3\nsuelo desnudo",
+            "0.0\nbaja cobertura",
+            "0.3\nveg. baja",
+            "0.6\nveg. media",
+            "0.9\nveg. alta",
+        ]
+    )
     cbar3.set_label("SAVI", fontsize=8)
 
     plt.tight_layout()
@@ -186,9 +195,10 @@ def fig_ndvi_savi_pre_post(img_pre, img_post):
 # APP
 # ==========================================
 
+
 def main():
-    st.set_page_config(page_title="DamageLens xBD", layout="wide")
-    st.title("🛰 DamageLens – Multi-Scale Damage Mapping on xBD")
+    st.set_page_config(page_title="DamageLens xBD", layout="wide", page_icon="🛰")
+    st.title(":material/satellite_alt: DamageLens – Multi-Scale Damage Mapping on xBD")
 
     st.sidebar.header("Configuración")
 
@@ -204,7 +214,16 @@ def main():
 
     # Seleccionar índice de imagen
     idx = st.sidebar.slider("Índice de imagen", 0, len(file_list) - 1, 0)
-    st.sidebar.write(f"Archivo: `{Path(file_list[idx]).name}`")
+    st.sidebar.write(f":material/image: \n`{Path(file_list[idx]).name}`")
+
+    st.sidebar.markdown("""
+    ## Equipo
+    
+    - Sandra Alitzel Vázquez Chávez
+    - Diego A. Barriga Martínez
+    - David Alexis Duran Ruiz
+    - Tlacaelel Jaime Flores Villaseñor
+    """)
 
     # Cargar modelo
     clf = load_trained_model()
@@ -234,8 +253,12 @@ def main():
     with tab2:
         st.subheader("Overlay de MDM sobre imagen Post")
         fig2, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-        ax1.imshow(img_post); ax1.set_title("Post-desastre"); ax1.axis("off")
-        ax2.imshow(overlay); ax2.set_title("MDM edificios"); ax2.axis("off")
+        ax1.imshow(img_post)
+        ax1.set_title("Post-desastre")
+        ax1.axis("off")
+        ax2.imshow(overlay)
+        ax2.set_title("MDM edificios")
+        ax2.axis("off")
         plt.tight_layout()
         st.pyplot(fig2)
 
